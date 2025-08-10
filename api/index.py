@@ -23,8 +23,18 @@ HTML = """
             max-width: 800px;
             margin: auto;
             padding: 20px;
-            /* Removed background image for compatibility */
-            background-color: #f0f0f0;
+            background-image: url('/static/background.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        #logo {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            width: 200px;
+            height: auto;
+            z-index: 1000;
         }
         button {
             background-color: #007BFF; 
@@ -48,6 +58,7 @@ HTML = """
     </style>
 </head>
 <body>
+<img src="/static/logo.png" alt="Logo" id="logo" />
 <h2>Καταχώριση Προϊόντων</h2>
 <form id="productForm">
     <input type="text" id="barcode" placeholder="Barcode" required><br>
@@ -192,3 +203,4 @@ def generate_doc():
         download_name='products.docx',
         mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     )
+
