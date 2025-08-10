@@ -200,8 +200,13 @@ def generate_doc():
     )
 
 # Vercel entry point
-def handler(request, *args, **kwargs):
-    return app(request.environ, start_response=lambda status, headers: None)
+return send_file(
+        buffer,
+        as_attachment=True,
+        download_name="products.docx",
+        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# Local testing only
+if __name__ == "__main__":
+    app.run(debug=False)
