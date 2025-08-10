@@ -10,7 +10,6 @@ from PIL import Image
 
 app = Flask(__name__)
 
-# HTML frontend — removed static background/logo to keep it simple for Vercel
 HTML = """
 <!DOCTYPE html>
 <html lang="en">
@@ -204,5 +203,6 @@ def generate_doc():
         download_name='products.docx',
         mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     )
+
 
 
