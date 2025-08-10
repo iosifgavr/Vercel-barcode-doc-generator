@@ -55,9 +55,33 @@ HTML = """
         button { padding: 10px 15px; margin-top: 10px; }
         td > button { margin-right: 5px; }
         h2 { text-align: center; }
+        
+        #popup {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border: 2px solid #007BFF;
+            padding: 20px 30px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.25);
+            z-index: 2000;
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
     </style>
 </head>
 <body>
+
+<div id="popup">
+    <h1 style="color: red;">ΠΡΟΣΟΧΗ</h1>
+    <p>Η παρούσα ιστοσελίδα δεν αποτελεί επίσημη ή εγκεκριμένη πλατφόρμα της εταιρείας Β. Καυκάς Α.Ε..
+Δεν φέρει καμία νομική ευθύνη ή δικαιώματα πνευματικής ιδιοκτησίας από την εταιρεία.
+Το περιεχόμενο και οι λειτουργίες της ιστοσελίδας παρέχονται αποκλειστικά για ενημερωτικούς και δοκιμαστικούς σκοπούς.
+Η χρήση της γίνεται υπό την αποκλειστική ευθύνη του χρήστη.</p>
+    <button id="closePopup">Κατανοώ και αποδέχομαι</button>
+</div>
+
 <img src="/static/logo.png" alt="Logo" id="logo" />
 <h2>Καταχώριση Προϊόντων</h2>
 <form id="productForm">
@@ -74,6 +98,13 @@ HTML = """
 </table>
 <button onclick="downloadDoc()">Κατεβάστε .doc</button>
 <script>
+
+const popup = document.getElementById('popup');
+    const closeBtn = document.getElementById('closePopup');
+    closeBtn.onclick = () => {
+        popup.style.display = 'none';
+    };
+
     const form = document.getElementById('productForm');
     const table = document.getElementById('productsTable').querySelector('tbody');
     const products = [];
