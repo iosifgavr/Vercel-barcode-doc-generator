@@ -8,9 +8,9 @@ import barcode
 from barcode.writer import ImageWriter
 from PIL import Image
 
-app = Flask(__name__, static_folder="../static", static_url_path="/static")
+app = Flask(__name__)
 
-# HTML frontend
+# HTML frontend — removed static background/logo to keep it simple for Vercel
 HTML = """
 <!DOCTYPE html>
 <html lang="en">
@@ -23,18 +23,8 @@ HTML = """
             max-width: 800px;
             margin: auto;
             padding: 20px;
-            background-image: url('/static/background.jpg');
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-        }
-        #logo {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            width: 200px;
-            height: auto;
-            z-index: 1000;
+            /* Removed background image for compatibility */
+            background-color: #f0f0f0;
         }
         button {
             background-color: #007BFF; 
@@ -58,7 +48,6 @@ HTML = """
     </style>
 </head>
 <body>
-<img src="/static/logo.png" alt="Logo" id="logo" />
 <h2>Καταχώριση Προϊόντων</h2>
 <form id="productForm">
     <input type="text" id="barcode" placeholder="Barcode" required><br>
@@ -131,14 +120,19 @@ HTML = """
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ products })
         })
-        .then(response => response.blob())
+        .then(response => {
+            if (!response.ok) throw new Error("Server error");
+            return response.blob();
+        })
         .then(blob => {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
             a.download = 'products.docx';
             a.click();
-        });
+            window.URL.revokeObjectURL(url);
+        })
+        .catch(e => alert(e.message));
     }
 </script>
 </body>
@@ -198,15 +192,3 @@ def generate_doc():
         download_name='products.docx',
         mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     )
-
-# Vercel entry point
-return send_file(
-        buffer,
-        as_attachment=True,
-        download_name="products.docx",
-        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-    )
-
-# Local testing only
-if __name__ == "__main__":
-    app.run(debug=False)
