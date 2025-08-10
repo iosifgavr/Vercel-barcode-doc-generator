@@ -16,6 +16,7 @@ HTML = """
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
     <title>Δημιουργία Barcode</title>
     <style>
         body {
@@ -203,4 +204,5 @@ def generate_doc():
         download_name='products.docx',
         mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     )
+
 
