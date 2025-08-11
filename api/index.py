@@ -264,16 +264,18 @@ def generate_doc():
             set_font(run, "Calibri", 20)
 
         # 4) Αρ. Εξαρτήματος Κατασκευαστή
-        manufacturer_paragraph = doc.add_paragraph(f"MPN: {item['manufacturer_part']}")
-        manufacturer_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        for run in manufacturer_paragraph.runs:
-            set_font(run, "Calibri", 14)
+        if item['manufacturer_part'].strip():
+            manufacturer_paragraph = doc.add_paragraph(f"MPN: {item['manufacturer_part']}")
+            manufacturer_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            for run in manufacturer_paragraph.runs:
+                set_font(run, "Calibri", 14)
 
         # 5) Προμηθευτής
-        supplier_paragraph = doc.add_paragraph(f"ΠΡΟΜΗΘΕΥΤΗΣ: {item['supplier']}")
-        supplier_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        for run in supplier_paragraph.runs:
-            set_font(run, "Calibri", 14)
+        if item['supplier'].strip():
+            supplier_paragraph = doc.add_paragraph(f"ΠΡΟΜΗΘΕΥΤΗΣ: {item['supplier']}")
+            supplier_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            for run in supplier_paragraph.runs:
+                set_font(run, "Calibri", 14)
 
     buffer = BytesIO()
     doc.save(buffer)
@@ -288,4 +290,5 @@ def generate_doc():
 
 if __name__ == '__main__':
     app.run(debug=False)
+
 
