@@ -89,8 +89,8 @@ HTML = """
     <input type="text" id="barcode" placeholder="Barcode" required><br>
     <input type="text" id="description" placeholder="Περιγραφή" required><br>
     <input type="text" id="code" placeholder="7ψήφιος Κωδικός SAP" maxlength="7" required><br>
-    <input type="text" id="manufacturer_part" placeholder="Αρ. Εξαρτήματος Κατασκευαστή" required><br>
-    <input type="text" id="supplier" placeholder="Προμηθευτής" required><br>
+    <input type="text" id="manufacturer_part" placeholder="Αρ. Εξαρτήματος Κατασκευαστή"><br>
+    <input type="text" id="supplier" placeholder="Προμηθευτής"><br>
     <button type="submit">Προσθήκη</button>
     <button type="button" id="clearAllBtn" style="margin-left:10px; background-color: red;">Διαγραφή Όλων</button>
 </form>
@@ -264,16 +264,16 @@ def generate_doc():
             set_font(run, "Calibri", 20)
 
         # 4) Αρ. Εξαρτήματος Κατασκευαστή
-        manufacturer_paragraph = doc.add_paragraph(f"MPN: {item['manufacturer_part']} {item['supplier']}")
+        manufacturer_paragraph = doc.add_paragraph(f"MPN: {item['manufacturer_part']}")
         manufacturer_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
         for run in manufacturer_paragraph.runs:
             set_font(run, "Calibri", 14)
 
         # 5) Προμηθευτής
-#        supplier_paragraph = doc.add_paragraph(f"ΠΡΟΜΗΘΕΥΤΗΣ: {item['supplier']}")
- #       supplier_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-  #      for run in supplier_paragraph.runs:
-   #         set_font(run, "Calibri", 20
+        supplier_paragraph = doc.add_paragraph(f"ΠΡΟΜΗΘΕΥΤΗΣ: {item['supplier']}")
+        supplier_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        for run in supplier_paragraph.runs:
+            set_font(run, "Calibri", 14)
 
     buffer = BytesIO()
     doc.save(buffer)
@@ -288,3 +288,4 @@ def generate_doc():
 
 if __name__ == '__main__':
     app.run(debug=False)
+
