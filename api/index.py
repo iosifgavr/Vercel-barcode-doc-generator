@@ -17,7 +17,7 @@ HTML = """
 <head>
     <meta charset="UTF-8">
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
-    <title>Δημιουργία Barcode</title>
+    <title>G101 Δημιουργία Barcode</title>
     <style>
         body {
             font-family: sans-serif;
@@ -89,11 +89,21 @@ HTML = """
     <input type="text" id="barcode" placeholder="Barcode" required><br>
     <input type="text" id="description" placeholder="Περιγραφή" required><br>
     <input type="text" id="code" placeholder="7ψήφιος Κωδικός SAP" maxlength="7" required><br>
+    <input type="text" id="manufacturer_part" placeholder="Αρ. Εξαρτήματος Κατασκευαστή" required><br>
+    <input type="text" id="supplier" placeholder="Προμηθευτής" required><br>
     <button type="submit">Προσθήκη</button>
+    <button type="button" id="clearAllBtn" style="margin-left:10px; background-color: red;">Διαγραφή Όλων</button>
 </form>
 <table id="productsTable">
     <thead>
-        <tr><th>Barcode</th><th>Περιγραφή</th><th>Κωδικός SAP</th><th>Ενέργειες</th></tr>
+        <tr>
+            <th>Barcode</th>
+            <th>Περιγραφή</th>
+            <th>Κωδικός SAP</th>
+            <th>Αρ. Εξαρτήματος Κατασκευαστή</th>
+            <th>Προμηθευτής</th>
+            <th>Ενέργειες</th>
+        </tr>
     </thead>
     <tbody></tbody>
 </table>
@@ -116,11 +126,13 @@ form.onsubmit = function(e) {
     const barcode = document.getElementById('barcode').value;
     const description = document.getElementById('description').value;
     const code = document.getElementById('code').value;
+    const manufacturer_part = document.getElementById('manufacturer_part').value;
+    const supplier = document.getElementById('supplier').value;
 
     if (editIndex === -1) {
-        products.push({ barcode, description, code });
+        products.push({ barcode, description, code, manufacturer_part, supplier });
     } else {
-        products[editIndex] = { barcode, description, code };
+        products[editIndex] = { barcode, description, code, manufacturer_part, supplier };
         editIndex = -1;
     }
 
@@ -136,6 +148,8 @@ function updateTable() {
             <td>${item.barcode}</td>
             <td>${item.description}</td>
             <td>${item.code}</td>
+            <td>${item.manufacturer_part}</td>
+            <td>${item.supplier}</td>
             <td>
                 <button onclick="editProduct(${index})">✏️</button>
                 <button onclick="deleteProduct(${index})">🗑️</button>
@@ -149,6 +163,8 @@ function editProduct(index) {
     document.getElementById('barcode').value = product.barcode;
     document.getElementById('description').value = product.description;
     document.getElementById('code').value = product.code;
+    document.getElementById('manufacturer_part').value = product.manufacturer_part;
+    document.getElementById('supplier').value = product.supplier;
     editIndex = index;
 }
 
@@ -177,6 +193,14 @@ function downloadDoc() {
     })
     .catch(e => alert(e.message));
 }
+
+document.getElementById('clearAllBtn').onclick = function() {
+    if (confirm("Θέλεις σίγουρα να διαγράψεις όλα τα προϊόντα;")) {
+        products.length = 0; // αδειάζει τον πίνακα
+        updateTable();
+    }
+};
+
 </script>
 </body>
 </html>
@@ -201,10 +225,10 @@ def generate_doc():
     section.page_height = Mm(150)
     section.page_width = Mm(100)
     section.orientation = WD_ORIENT.PORTRAIT
-    section.top_margin = Mm(10)
+    section.top_margin = Mm(3)
     section.left_margin = Mm(10)
     section.right_margin = Mm(10)
-    section.bottom_margin = Mm(10)
+    section.bottom_margin = Mm(1)
 
     for idx, item in enumerate(products):
         if idx > 0:
@@ -231,13 +255,25 @@ def generate_doc():
         desc_paragraph = doc.add_paragraph(item['description'])
         desc_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
         for run in desc_paragraph.runs:
-            set_font(run, "Calibri", 20)
+            set_font(run, "Calibri", 18)
 
-        # 3) Κωδικός SAP με Calibri και 20pt
+        # 3) Κωδικός SAP
         code_paragraph = doc.add_paragraph(f"ΚΩΔΙΚΟΣ SAP: {item['code']}")
         code_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
         for run in code_paragraph.runs:
             set_font(run, "Calibri", 20)
+
+        # 4) Αρ. Εξαρτήματος Κατασκευαστή
+        manufacturer_paragraph = doc.add_paragraph(f"MPN: {item['manufacturer_part']} {item['supplier']}")
+        manufacturer_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        for run in manufacturer_paragraph.runs:
+            set_font(run, "Calibri", 14)
+
+        # 5) Προμηθευτής
+#        supplier_paragraph = doc.add_paragraph(f"ΠΡΟΜΗΘΕΥΤΗΣ: {item['supplier']}")
+ #       supplier_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+  #      for run in supplier_paragraph.runs:
+   #         set_font(run, "Calibri", 20
 
     buffer = BytesIO()
     doc.save(buffer)
@@ -251,4 +287,4 @@ def generate_doc():
     )
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
