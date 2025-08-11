@@ -1,6 +1,6 @@
 from flask import Flask, request, send_file, render_template_string
 from docx import Document
-from docx.shared import Mm
+from docx.shared import Mm, Pt
 from docx.enum.section import WD_ORIENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from io import BytesIO
@@ -100,82 +100,82 @@ HTML = """
 <script>
 
 const popup = document.getElementById('popup');
-    const closeBtn = document.getElementById('closePopup');
-    closeBtn.onclick = () => {
-        popup.style.display = 'none';
-    };
+const closeBtn = document.getElementById('closePopup');
+closeBtn.onclick = () => {
+    popup.style.display = 'none';
+};
 
-    const form = document.getElementById('productForm');
-    const table = document.getElementById('productsTable').querySelector('tbody');
-    const products = [];
-    let editIndex = -1;
+const form = document.getElementById('productForm');
+const table = document.getElementById('productsTable').querySelector('tbody');
+const products = [];
+let editIndex = -1;
 
-    form.onsubmit = function(e) {
-        e.preventDefault();
-        const barcode = document.getElementById('barcode').value;
-        const description = document.getElementById('description').value;
-        const code = document.getElementById('code').value;
+form.onsubmit = function(e) {
+    e.preventDefault();
+    const barcode = document.getElementById('barcode').value;
+    const description = document.getElementById('description').value;
+    const code = document.getElementById('code').value;
 
-        if (editIndex === -1) {
-            products.push({ barcode, description, code });
-        } else {
-            products[editIndex] = { barcode, description, code };
-            editIndex = -1;
-        }
-
-        updateTable();
-        form.reset();
-    };
-
-    function updateTable() {
-        table.innerHTML = '';
-        products.forEach((item, index) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${item.barcode}</td>
-                <td>${item.description}</td>
-                <td>${item.code}</td>
-                <td>
-                    <button onclick="editProduct(${index})">✏️</button>
-                    <button onclick="deleteProduct(${index})">🗑️</button>
-                </td>`;
-            table.appendChild(row);
-        });
+    if (editIndex === -1) {
+        products.push({ barcode, description, code });
+    } else {
+        products[editIndex] = { barcode, description, code };
+        editIndex = -1;
     }
 
-    function editProduct(index) {
-        const product = products[index];
-        document.getElementById('barcode').value = product.barcode;
-        document.getElementById('description').value = product.description;
-        document.getElementById('code').value = product.code;
-        editIndex = index;
-    }
+    updateTable();
+    form.reset();
+};
 
-    function deleteProduct(index) {
-        products.splice(index, 1);
-        updateTable();
-    }
+function updateTable() {
+    table.innerHTML = '';
+    products.forEach((item, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${item.barcode}</td>
+            <td>${item.description}</td>
+            <td>${item.code}</td>
+            <td>
+                <button onclick="editProduct(${index})">✏️</button>
+                <button onclick="deleteProduct(${index})">🗑️</button>
+            </td>`;
+        table.appendChild(row);
+    });
+}
 
-    function downloadDoc() {
-        fetch('/generate_doc', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ products })
-        })
-        .then(response => {
-            if (!response.ok) throw new Error("Server error");
-            return response.blob();
-        })
-        .then(blob => {
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'products.docx';
-            a.click();
-            window.URL.revokeObjectURL(url);
-        })
-        .catch(e => alert(e.message));
-    }
+function editProduct(index) {
+    const product = products[index];
+    document.getElementById('barcode').value = product.barcode;
+    document.getElementById('description').value = product.description;
+    document.getElementById('code').value = product.code;
+    editIndex = index;
+}
+
+function deleteProduct(index) {
+    products.splice(index, 1);
+    updateTable();
+}
+
+function downloadDoc() {
+    fetch('/generate_doc', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ products })
+    })
+    .then(response => {
+        if (!response.ok) throw new Error("Server error");
+        return response.blob();
+    })
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'products.docx';
+        a.click();
+        window.URL.revokeObjectURL(url);
+    })
+    .catch(e => alert(e.message));
+}
 </script>
 </body>
 </html>
@@ -204,6 +204,7 @@ def generate_doc():
         if idx > 0:
             doc.add_page_break()
 
+        # Δημιουργία barcode
         barcode_stream = BytesIO()
         code128 = barcode.get('code128', item['barcode'], writer=ImageWriter())
         code128.write(barcode_stream)
@@ -214,15 +215,23 @@ def generate_doc():
         img.save(img_buffer, format="PNG")
         img_buffer.seek(0)
 
+        # 1) Barcode 8x7 cm
         barcode_paragraph = doc.add_paragraph()
         barcode_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        barcode_paragraph.add_run().add_picture(img_buffer, width=Mm(60))
+        barcode_run = barcode_paragraph.add_run()
+        barcode_run.add_picture(img_buffer, width=Mm(80), height=Mm(70))
 
+        # 2) Περιγραφή με γραμματοσειρά 20
         desc_paragraph = doc.add_paragraph(item['description'])
         desc_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        for run in desc_paragraph.runs:
+            run.font.size = Pt(20)
 
-        code_paragraph = doc.add_paragraph(item['code'])
+        # 3) Κωδικός SAP με κείμενο πριν και γραμματοσειρά 20
+        code_paragraph = doc.add_paragraph(f"ΚΩΔΙΚΟΣ SAP: {item['code']}")
         code_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        for run in code_paragraph.runs:
+            run.font.size = Pt(20)
 
     buffer = BytesIO()
     doc.save(buffer)
@@ -235,5 +244,5 @@ def generate_doc():
         mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     )
 
-
-
+if __name__ == '__main__':
+    app.run(debug=True)
