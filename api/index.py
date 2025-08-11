@@ -3,6 +3,7 @@ from docx import Document
 from docx.shared import Mm, Pt
 from docx.enum.section import WD_ORIENT
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml.ns import qn
 from io import BytesIO
 import barcode
 from barcode.writer import ImageWriter
@@ -181,6 +182,11 @@ function downloadDoc() {
 </html>
 """
 
+def set_font(run, name, size_pt):
+    run.font.size = Pt(size_pt)
+    run.font.name = name
+    run._element.rPr.rFonts.set(qn('w:eastAsia'), name)
+
 @app.route('/')
 def index():
     return render_template_string(HTML)
@@ -221,17 +227,17 @@ def generate_doc():
         barcode_run = barcode_paragraph.add_run()
         barcode_run.add_picture(img_buffer, width=Mm(80), height=Mm(70))
 
-        # 2) Περιγραφή με γραμματοσειρά 20
+        # 2) Περιγραφή με Calibri και 20pt
         desc_paragraph = doc.add_paragraph(item['description'])
         desc_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
         for run in desc_paragraph.runs:
-            run.font.size = Pt(20)
+            set_font(run, "Calibri", 20)
 
-        # 3) Κωδικός SAP με κείμενο πριν και γραμματοσειρά 20
+        # 3) Κωδικός SAP με Calibri και 20pt
         code_paragraph = doc.add_paragraph(f"ΚΩΔΙΚΟΣ SAP: {item['code']}")
         code_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
         for run in code_paragraph.runs:
-            run.font.size = Pt(20)
+            set_font(run, "Calibri", 20)
 
     buffer = BytesIO()
     doc.save(buffer)
