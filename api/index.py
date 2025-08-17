@@ -93,7 +93,15 @@ HTML = """
     <input type="text" id="supplier" placeholder="Προμηθευτής"><br>
     <button type="submit">Προσθήκη</button>
     <button type="button" id="clearAllBtn" style="margin-left:10px; background-color: red;">Διαγραφή Όλων</button>
+    <label for="altLayout" id="altLayoutLabel" 
+           style="padding:8px 12px; margin-left:10px; background-color: gray; 
+                  color: white; border-radius: 4px; cursor: pointer;">
+        Διπλή διάταξη
+    </label>
+    <input type="checkbox" id="altLayout" hidden>
 </form>
+
+
 <table id="productsTable">
     <thead>
         <tr>
@@ -174,10 +182,11 @@ function deleteProduct(index) {
 }
 
 function downloadDoc() {
+    const altLayout = document.getElementById('altLayout').checked;
     fetch('/generate_doc', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ products })
+        body: JSON.stringify({ products, altLayout })
     })
     .then(response => {
         if (!response.ok) throw new Error("Server error");
@@ -196,10 +205,23 @@ function downloadDoc() {
 
 document.getElementById('clearAllBtn').onclick = function() {
     if (confirm("Θέλεις σίγουρα να διαγράψεις όλα τα προϊόντα;")) {
-        products.length = 0; // αδειάζει τον πίνακα
+        products.length = 0;
         updateTable();
     }
 };
+
+const altCheckbox = document.getElementById("altLayout");
+const altLabel = document.getElementById("altLayoutLabel");
+
+// όταν αλλάζει το checkbox → αλλάζουμε χρώμα
+altCheckbox.addEventListener("change", function() {
+    if (this.checked) {
+        altLabel.style.backgroundColor = "green";
+    } else {
+        altLabel.style.backgroundColor = "gray";
+    }
+});
+
 
 </script>
 </body>
@@ -219,63 +241,128 @@ def index():
 def generate_doc():
     data = request.json
     products = data.get('products', [])
+    alt_layout = data.get('altLayout', False)
 
     doc = Document()
     section = doc.sections[-1]
-    section.page_height = Mm(150)
-    section.page_width = Mm(100)
-    section.orientation = WD_ORIENT.PORTRAIT
-    section.top_margin = Mm(3)
-    section.left_margin = Mm(10)
-    section.right_margin = Mm(10)
-    section.bottom_margin = Mm(1)
 
-    for idx, item in enumerate(products):
-        if idx > 0:
-            doc.add_page_break()
+    if not alt_layout:
+        section.page_height = Mm(150)
+        section.page_width = Mm(100)
+        section.orientation = WD_ORIENT.PORTRAIT
+        section.top_margin = Mm(3)
+        section.left_margin = Mm(3)
+        section.right_margin = Mm(3)
+        section.bottom_margin = Mm(3)
 
-        # Δημιουργία barcode
-        barcode_stream = BytesIO()
-        code128 = barcode.get('code128', item['barcode'], writer=ImageWriter())
-        code128.write(barcode_stream)
-        barcode_stream.seek(0)
+        for idx, item in enumerate(products):
+            if idx > 0:
+                doc.add_page_break()
 
-        img = Image.open(barcode_stream).copy()
-        img_buffer = BytesIO()
-        img.save(img_buffer, format="PNG")
-        img_buffer.seek(0)
+            # Δημιουργία barcode
+            barcode_stream = BytesIO()
+            code128 = barcode.get('code128', item['barcode'], writer=ImageWriter())
+            code128.write(barcode_stream)
+            barcode_stream.seek(0)
 
-        # 1) Barcode 8x7 cm
-        barcode_paragraph = doc.add_paragraph()
-        barcode_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        barcode_run = barcode_paragraph.add_run()
-        barcode_run.add_picture(img_buffer, width=Mm(80), height=Mm(70))
+            img = Image.open(barcode_stream).copy()
+            img_buffer = BytesIO()
+            img.save(img_buffer, format="PNG")
+            img_buffer.seek(0)
 
-        # 2) Περιγραφή με Calibri και 20pt
-        desc_paragraph = doc.add_paragraph(item['description'])
-        desc_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        for run in desc_paragraph.runs:
-            set_font(run, "Calibri", 18)
+            barcode_paragraph = doc.add_paragraph()
+            barcode_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            barcode_paragraph.paragraph_format.space_after = Pt(3)
+            barcode_run = barcode_paragraph.add_run()
+            barcode_run.add_picture(img_buffer, width=Mm(80), height=Mm(70))
 
-        # 3) Κωδικός SAP
-        code_paragraph = doc.add_paragraph(f"ΚΩΔΙΚΟΣ SAP: {item['code']}")
-        code_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        for run in code_paragraph.runs:
-            set_font(run, "Calibri", 20)
+            desc_paragraph = doc.add_paragraph(item['description'])
+            desc_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            desc_paragraph.paragraph_format.space_after = Pt(3)
+            for run in desc_paragraph.runs:
+                set_font(run, "Calibri", 18)
 
-        # 4) Αρ. Εξαρτήματος Κατασκευαστή
-        if item['manufacturer_part'].strip():
-            manufacturer_paragraph = doc.add_paragraph(f"MPN: {item['manufacturer_part']}")
-            manufacturer_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            for run in manufacturer_paragraph.runs:
-                set_font(run, "Calibri", 14)
+            code_paragraph = doc.add_paragraph(f"ΚΩΔΙΚΟΣ SAP: {item['code']}")
+            code_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            code_paragraph.paragraph_format.space_after = Pt(3)
+            for run in code_paragraph.runs:
+                set_font(run, "Calibri", 20)
 
-        # 5) Προμηθευτής
-        if item['supplier'].strip():
-            supplier_paragraph = doc.add_paragraph(f"ΠΡΟΜΗΘΕΥΤΗΣ: {item['supplier']}")
-            supplier_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            for run in supplier_paragraph.runs:
-                set_font(run, "Calibri", 14)
+            if item['manufacturer_part'].strip():
+                manufacturer_paragraph = doc.add_paragraph(f"MPN: {item['manufacturer_part']}")
+                manufacturer_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                manufacturer_paragraph.paragraph_format.space_after = Pt(3)
+                for run in manufacturer_paragraph.runs:
+                    set_font(run, "Calibri", 14)
+
+            if item['supplier'].strip():
+                supplier_paragraph = doc.add_paragraph(f"ΠΡΟΜΗΘΕΥΤΗΣ: {item['supplier']}")
+                supplier_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                supplier_paragraph.paragraph_format.space_after = Pt(3)
+                for run in supplier_paragraph.runs:
+                    set_font(run, "Calibri", 14)
+
+    else:
+        # ===== Νέα διάταξη (2 προϊόντα ανά σελίδα) =====
+        section.page_height = Mm(297)
+        section.page_width = Mm(210)
+        section.orientation = WD_ORIENT.PORTRAIT
+        section.top_margin = Mm(3)
+        section.left_margin = Mm(3)
+        section.right_margin = Mm(3)
+        section.bottom_margin = Mm(3)
+
+        for idx, item in enumerate(products):
+            # Δημιουργία barcode
+            barcode_stream = BytesIO()
+            code128 = barcode.get('code128', item['barcode'], writer=ImageWriter())
+            code128.write(barcode_stream)
+            barcode_stream.seek(0)
+
+            img = Image.open(barcode_stream).copy()
+            img_buffer = BytesIO()
+            img.save(img_buffer, format="PNG")
+            img_buffer.seek(0)
+
+            barcode_paragraph = doc.add_paragraph()
+            barcode_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            barcode_paragraph.paragraph_format.space_after = Pt(3)
+            barcode_run = barcode_paragraph.add_run()
+            barcode_run.add_picture(img_buffer, width=Mm(80), height=Mm(20))
+
+            desc_paragraph = doc.add_paragraph(item['description'])
+            desc_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            desc_paragraph.paragraph_format.space_after = Pt(3)
+            for run in desc_paragraph.runs:
+                set_font(run, "Calibri", 11)
+
+            code_paragraph = doc.add_paragraph(f"ΚΩΔΙΚΟΣ SAP: {item['code']}")
+            code_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+            code_paragraph.paragraph_format.space_after = Pt(3)
+            for run in code_paragraph.runs:
+                set_font(run, "Calibri", 11)
+
+            if item['manufacturer_part'].strip():
+                manufacturer_paragraph = doc.add_paragraph(f"MPN: {item['manufacturer_part']}")
+                manufacturer_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                manufacturer_paragraph.paragraph_format.space_after = Pt(3)
+                for run in manufacturer_paragraph.runs:
+                    set_font(run, "Calibri", 11)
+
+            if item['supplier'].strip():
+                supplier_paragraph = doc.add_paragraph(f"ΠΡΟΜΗΘΕΥΤΗΣ: {item['supplier']}")
+                supplier_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                supplier_paragraph.paragraph_format.space_after = Pt(3)
+                for run in supplier_paragraph.runs:
+                    set_font(run, "Calibri", 11)
+
+            # Κενό 0.5 cm μεταξύ προϊόντων
+            doc.add_paragraph().add_run().add_break()
+            doc.add_paragraph().add_run().add_break()
+
+            # Κάθε σελίδα έχει 2 προϊόντα
+            if (idx + 1) % 2 == 0 and idx != len(products) - 1:
+                doc.add_page_break()
 
     buffer = BytesIO()
     doc.save(buffer)
@@ -290,5 +377,3 @@ def generate_doc():
 
 if __name__ == '__main__':
     app.run(debug=False)
-
-
