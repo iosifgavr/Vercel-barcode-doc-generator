@@ -213,7 +213,6 @@ document.getElementById('clearAllBtn').onclick = function() {
 const altCheckbox = document.getElementById("altLayout");
 const altLabel = document.getElementById("altLayoutLabel");
 
-// όταν αλλάζει το checkbox → αλλάζουμε χρώμα
 altCheckbox.addEventListener("change", function() {
     if (this.checked) {
         altLabel.style.backgroundColor = "green";
@@ -221,7 +220,6 @@ altCheckbox.addEventListener("change", function() {
         altLabel.style.backgroundColor = "gray";
     }
 });
-
 
 </script>
 </body>
@@ -303,9 +301,9 @@ def generate_doc():
                     set_font(run, "Calibri", 14)
 
     else:
-        # ===== Νέα διάταξη (2 προϊόντα ανά σελίδα) =====
-        section.page_height = Mm(297)
-        section.page_width = Mm(210)
+        # ===== Νέα διάταξη (2 προϊόντα ανά σελίδα με ίδιες διαστάσεις) =====
+        section.page_height = Mm(150)
+        section.page_width = Mm(100)
         section.orientation = WD_ORIENT.PORTRAIT
         section.top_margin = Mm(3)
         section.left_margin = Mm(3)
