@@ -56,6 +56,13 @@ HTML = """
         button { padding: 10px 15px; margin-top: 10px; }
         td > button { margin-right: 5px; }
         h2 { text-align: center; }
+
+        /* === Στήλη Α/Α να μην σπάει σε 2 γραμμές === */
+        th.aa-col, td.aa-col {
+            white-space: nowrap;
+            width: 50px;
+            text-align: center;
+        }
         
         #popup {
             position: fixed;
@@ -69,6 +76,16 @@ HTML = """
             text-align: center;
             font-weight: bold;
             font-size: 18px;
+        }
+        #stickerBox {
+            display: inline-block;
+            padding: 10px 15px;
+            margin-left: 10px;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: default;
         }
     </style>
 </head>
@@ -99,12 +116,14 @@ HTML = """
         Διπλή διάταξη
     </label>
     <input type="checkbox" id="altLayout" hidden>
+    <div id="stickerBox">Αυτοκόλλητα: 0</div>
 </form>
 
 
 <table id="productsTable">
     <thead>
         <tr>
+            <th class="aa-col">Α/Α</th>
             <th>Barcode</th>
             <th>Περιγραφή</th>
             <th>Κωδικός SAP</th>
@@ -153,6 +172,7 @@ function updateTable() {
     products.forEach((item, index) => {
         const row = document.createElement('tr');
         row.innerHTML = `
+            <td class="aa-col">${index + 1}</td>
             <td>${item.barcode}</td>
             <td>${item.description}</td>
             <td>${item.code}</td>
@@ -161,9 +181,11 @@ function updateTable() {
             <td>
                 <button onclick="editProduct(${index})">✏️</button>
                 <button onclick="deleteProduct(${index})">🗑️</button>
+                <button onclick="duplicateProduct(${index})">📄</button>
             </td>`;
         table.appendChild(row);
     });
+    updateStickerBox();
 }
 
 function editProduct(index) {
@@ -219,8 +241,25 @@ altCheckbox.addEventListener("change", function() {
     } else {
         altLabel.style.backgroundColor = "gray";
     }
+    updateStickerBox();
 });
 
+function updateStickerBox() {
+    const altLayout = document.getElementById("altLayout").checked;
+    let count = products.length;
+
+    if (altLayout) {
+        count = Math.ceil(count / 2); // αν είναι άρτιος, μισό, αν περιττός +1
+    }
+
+    document.getElementById("stickerBox").innerText = "Αυτοκόλλητα: " + count;
+}
+
+function duplicateProduct(index) {
+    const productToCopy = { ...products[index] }; // Αντιγραφή object
+    products.splice(index + 1, 0, productToCopy); // Εισαγωγή αμέσως μετά
+    updateTable();
+}
 </script>
 </body>
 </html>
@@ -257,7 +296,6 @@ def generate_doc():
             if idx > 0:
                 doc.add_page_break()
 
-            # Δημιουργία barcode
             barcode_stream = BytesIO()
             code128 = barcode.get('code128', item['barcode'], writer=ImageWriter())
             code128.write(barcode_stream)
@@ -301,7 +339,6 @@ def generate_doc():
                     set_font(run, "Calibri", 14)
 
     else:
-        # ===== Νέα διάταξη (2 προϊόντα ανά σελίδα με ίδιες διαστάσεις) =====
         section.page_height = Mm(150)
         section.page_width = Mm(100)
         section.orientation = WD_ORIENT.PORTRAIT
@@ -311,7 +348,6 @@ def generate_doc():
         section.bottom_margin = Mm(3)
 
         for idx, item in enumerate(products):
-            # Δημιουργία barcode
             barcode_stream = BytesIO()
             code128 = barcode.get('code128', item['barcode'], writer=ImageWriter())
             code128.write(barcode_stream)
@@ -354,11 +390,9 @@ def generate_doc():
                 for run in supplier_paragraph.runs:
                     set_font(run, "Calibri", 11)
 
-            # Κενό 0.5 cm μεταξύ προϊόντων
             doc.add_paragraph().add_run().add_break()
             doc.add_paragraph().add_run().add_break()
 
-            # Κάθε σελίδα έχει 2 προϊόντα
             if (idx + 1) % 2 == 0 and idx != len(products) - 1:
                 doc.add_page_break()
 
