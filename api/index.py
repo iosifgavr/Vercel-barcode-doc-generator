@@ -18,6 +18,18 @@ HTML = """
     <meta charset="UTF-8">
     <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
     <title>G101 Δημιουργία Barcode</title>
+
+    
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LLE8YDS0ZK"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-LLE8YDS0ZK');
+</script>
+
     <style>
         body {
             font-family: sans-serif;
@@ -409,3 +421,4 @@ def generate_doc():
 
 if __name__ == '__main__':
     app.run(debug=False)
+
