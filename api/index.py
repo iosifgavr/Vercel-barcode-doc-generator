@@ -95,6 +95,38 @@ HTML = """
             font-weight: bold;
             cursor: default;
         }
+
+        .festive-header {
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            padding: 12px;
+            margin: 60px auto 15px auto; /* αφήνει χώρο για το logo */
+            background: linear-gradient(90deg, #c62828, #2e7d32);
+            color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+            letter-spacing: 1px;
+        }
+
+        .snowflake {
+            position: fixed;
+            top: -10px;
+            color: white;
+            user-select: none;
+            pointer-events: none;
+            z-index: 3000;
+            animation-name: fall;
+            animation-timing-function: linear;
+        }
+
+        @keyframes fall {
+            to {
+                transform: translateY(110vh);
+            }
+        }
+
+
     </style>
 </head>
 <body>
@@ -109,6 +141,9 @@ HTML = """
 </div>
 
 <img src="/static/logo.png" alt="Logo" id="logo" />
+<div class="festive-header">
+    🎄 Καλές Γιορτές και με το καλό το 2026 ✨
+</div>
 <h2>Καταχώριση Προϊόντων</h2>
 <form id="productForm">
     <input type="text" id="barcode" placeholder="Barcode" required><br>
@@ -268,6 +303,24 @@ function duplicateProduct(index) {
     products.splice(index + 1, 0, productToCopy); // Εισαγωγή αμέσως μετά
     updateTable();
 }
+
+const snowflakesCount = 35;
+
+for (let i = 0; i < snowflakesCount; i++) {
+    const snow = document.createElement("div");
+    snow.className = "snowflake";
+    snow.innerHTML = "❄";
+
+    snow.style.left = Math.random() * 100 + "vw";
+    snow.style.fontSize = (10 + Math.random() * 15) + "px";
+    snow.style.opacity = Math.random();
+    snow.style.animationDuration = (6 + Math.random() * 6) + "s";
+    snow.style.animationDelay = Math.random() * 5 + "s";
+
+    document.body.appendChild(snow);
+}
+
+
 </script>
 </body>
 </html>
